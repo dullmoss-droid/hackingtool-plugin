@@ -1,0 +1,7 @@
+{
+  "env": {
+    "CLAUDE_PLUGIN_ROOT": "/home/user/hackingtool-plugin/plugins/hackingtool",
+    "GOPATH": "/root/go",
+    "PATH": "/root/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  }
+}
