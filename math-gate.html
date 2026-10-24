@@ -1,0 +1,675 @@
+<title>Candado Mental</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: pantalla única tipo "lock screen" — cabecera de estado, reto central, teclado abajo */
+  :root {
+    --bg: #eef1f6;
+    --surface: #ffffff;
+    --surface-2: #f4f6fb;
+    --ink: #1a2133;
+    --ink-soft: #5a6478;
+    --line: #dde2ec;
+    --accent: #4f46e5;
+    --accent-soft: #e8e7fd;
+    --good: #0f8a5f;
+    --good-soft: #d9f3e8;
+    --bad: #c23b4b;
+    --bad-soft: #fbe1e4;
+    --shadow: 0 10px 30px rgba(26,33,51,.10);
+    --fdisplay: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --fbody: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fnum: "Space Grotesk", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1017;
+      --surface: #161b26;
+      --surface-2: #1d2332;
+      --ink: #eef1f8;
+      --ink-soft: #99a3b8;
+      --line: #2a3142;
+      --accent: #8b87ff;
+      --accent-soft: #241f4d;
+      --good: #4ad6a0;
+      --good-soft: #13372b;
+      --bad: #ff8491;
+      --bad-soft: #3d1c22;
+      --shadow: 0 12px 34px rgba(0,0,0,.45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1017;
+    --surface: #161b26;
+    --surface-2: #1d2332;
+    --ink: #eef1f8;
+    --ink-soft: #99a3b8;
+    --line: #2a3142;
+    --accent: #8b87ff;
+    --accent-soft: #241f4d;
+    --good: #4ad6a0;
+    --good-soft: #13372b;
+    --bad: #ff8491;
+    --bad-soft: #3d1c22;
+    --shadow: 0 12px 34px rgba(0,0,0,.45);
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--fbody);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 14px 18px;
+    gap: 14px;
+  }
+
+  /* ---- Barra de estado ---- */
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 10px 12px;
+    box-shadow: var(--shadow);
+  }
+  .status .chip {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+  .status .chip + .chip { border-left: 1px solid var(--line); }
+  .chip .k {
+    font-size: 10px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: block;
+  }
+  .chip .v {
+    font-family: var(--fnum);
+    font-weight: 600;
+    font-size: 19px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip .v small { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+
+  /* ---- Tarjeta principal ---- */
+  .card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 20px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .lock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .lock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: var(--ink-soft);
+  }
+  .lock-badge svg { width: 15px; height: 15px; }
+  .level-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .prompt {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .problem {
+    text-align: center;
+    font-family: var(--fnum);
+    font-weight: 700;
+    font-size: clamp(42px, 15vw, 64px);
+    letter-spacing: .01em;
+    font-variant-numeric: tabular-nums;
+    text-wrap: balance;
+    margin: 2px 0;
+    line-height: 1.05;
+  }
+
+  .answer {
+    text-align: center;
+    font-family: var(--fnum);
+    font-weight: 600;
+    font-size: 34px;
+    font-variant-numeric: tabular-nums;
+    min-height: 46px;
+    border-radius: 14px;
+    border: 2px dashed var(--line);
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .answer.empty { color: var(--ink-soft); }
+  .answer.good { border-color: var(--good); background: var(--good-soft); border-style: solid; }
+  .answer.bad { border-color: var(--bad); background: var(--bad-soft); border-style: solid; }
+
+  /* ---- Barra de tiempo ---- */
+  .timer {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .timer > i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    transform-origin: left;
+    border-radius: 999px;
+  }
+  .timer.warn > i { background: var(--bad); }
+  .time-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-family: var(--fnum);
+    font-variant-numeric: tabular-nums;
+    margin-top: -6px;
+  }
+
+  .feedback {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 20px;
+  }
+  .feedback.good { color: var(--good); }
+  .feedback.bad { color: var(--bad); }
+
+  /* ---- Teclado ---- */
+  .pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+  }
+  .pad button {
+    font-family: var(--fnum);
+    font-size: 24px;
+    font-weight: 600;
+    padding: 14px 0;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 1px 0 var(--line);
+    transition: transform .05s, background .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pad button:active { transform: translateY(1px) scale(.98); background: var(--surface-2); }
+  .pad .util { font-size: 15px; color: var(--ink-soft); background: var(--surface-2); }
+  .pad .enter {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: none;
+    font-weight: 700;
+  }
+  :root[data-theme="dark"] .pad .enter, :root:not([data-theme="light"]) .pad .enter { color: #0d1017; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .pad .enter { color: #fff; } }
+  .pad button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- Pantalla desbloqueada ---- */
+  .unlocked {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    padding: 24px;
+  }
+  .unlocked .big {
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: var(--good-soft);
+    display: grid; place-items: center;
+  }
+  .unlocked .big svg { width: 38px; height: 38px; color: var(--good); }
+  .unlocked h2 { font-family: var(--fdisplay); font-size: 25px; margin: 0; }
+  .unlocked p { color: var(--ink-soft); margin: 0; max-width: 34ch; }
+  .btn {
+    font-family: var(--fbody);
+    font-weight: 700;
+    font-size: 16px;
+    padding: 14px 24px;
+    border-radius: 14px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  :root[data-theme="dark"] .btn, :root:not([data-theme="light"]) .btn { color: #0d1017; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .btn { color: #fff; } }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+
+  .mini-stats {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .mini-stats div { text-align: center; }
+  .mini-stats .k { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .07em; }
+  .mini-stats .v { font-family: var(--fnum); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
+
+  .note {
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align: center;
+    line-height: 1.45;
+  }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .topbar h1 {
+    font-family: var(--fdisplay);
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -.01em;
+  }
+  .theme-btn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
+    border-radius: 10px;
+    padding: 5px 9px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--fbody);
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-7px); }
+    75% { transform: translateX(7px); }
+  }
+  .shake { animation: shake .3s; }
+  @media (prefers-reduced-motion: reduce) {
+    .shake { animation: none; }
+    .timer > i { transition: none !important; }
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap">
+
+<div class="app">
+  <div class="topbar">
+    <h1>Candado Mental</h1>
+    <button class="theme-btn" id="themeBtn" type="button">Tema</button>
+  </div>
+
+  <div class="status">
+    <div class="chip"><span class="k">Nivel</span><span class="v" id="sLevel">1<small id="sLevelName"></small></span></div>
+    <div class="chip"><span class="k">Racha</span><span class="v" id="sStreak">0</span></div>
+    <div class="chip"><span class="k">Mejor racha</span><span class="v" id="sBest">0</span></div>
+  </div>
+
+  <!-- RETO -->
+  <section class="card" id="screenChallenge">
+    <div class="lock-row">
+      <span class="lock-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Teléfono bloqueado
+      </span>
+      <span class="level-tag" id="levelTag">Nivel 1</span>
+    </div>
+
+    <div class="prompt">Resuelve para desbloquear</div>
+    <div class="problem" id="problem">3 + 4</div>
+    <div class="answer empty" id="answer">—</div>
+
+    <div class="timer" id="timerWrap"><i id="timerBar"></i></div>
+    <div class="time-label" id="timeLabel">20.0 s</div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="pad">
+      <button type="button" data-d="1">1</button>
+      <button type="button" data-d="2">2</button>
+      <button type="button" data-d="3">3</button>
+      <button type="button" data-d="4">4</button>
+      <button type="button" data-d="5">5</button>
+      <button type="button" data-d="6">6</button>
+      <button type="button" data-d="7">7</button>
+      <button type="button" data-d="8">8</button>
+      <button type="button" data-d="9">9</button>
+      <button type="button" class="util" id="clearBtn">Borrar</button>
+      <button type="button" data-d="0">0</button>
+      <button type="button" class="enter" id="enterBtn">OK</button>
+    </div>
+  </section>
+
+  <!-- DESBLOQUEADO -->
+  <section class="card" id="screenUnlocked" hidden>
+    <div class="unlocked">
+      <div class="big">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+      </div>
+      <h2>¡Desbloqueado!</h2>
+      <p id="unlockMsg">Respondiste bien. Tu mente ya hizo su parte — usa el celular con intención.</p>
+      <div class="mini-stats">
+        <div><div class="k">Resuelto en</div><div class="v" id="uTime">—</div></div>
+        <div><div class="k">Nivel</div><div class="v" id="uLevel">—</div></div>
+        <div><div class="k">Racha</div><div class="v" id="uStreak">—</div></div>
+      </div>
+      <button class="btn" id="lockAgainBtn" type="button">Volver a bloquear</button>
+      <button class="btn ghost" id="resetBtn" type="button">Reiniciar progreso</button>
+    </div>
+  </section>
+
+  <p class="note">
+    Prototipo para probar la idea en tu navegador. Al <b>acertar</b> sube la dificultad (números más grandes, operaciones más duras, menos tiempo);
+    al <b>fallar</b> o quedarte sin tiempo, baja. Una app real de Android puede pedir esto cada vez que uses el teléfono.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Niveles: números más grandes + operaciones más duras + menos tiempo ----------
+  // requiredStreak: aciertos seguidos para subir de nivel.
+  var LEVELS = [
+    { name: "Sumas y restas fáciles", time: 22, make: addSub(1, 9) },
+    { name: "Sumas y restas de dos cifras", time: 20, make: addSub(10, 49) },
+    { name: "Sumas y restas grandes", time: 18, make: addSub(15, 99) },
+    { name: "Tablas de multiplicar", time: 18, make: mul(2, 9, 2, 9) },
+    { name: "Multiplicación dos × una cifra", time: 16, make: mul(11, 29, 3, 9) },
+    { name: "División exacta", time: 16, make: divExact(2, 9, 2, 12) },
+    { name: "Multiplicación dos × dos cifras", time: 15, make: mul(11, 25, 11, 19) },
+    { name: "Mixto a contrarreloj", time: 12, make: mixed() }
+  ];
+  var REQUIRED_STREAK = 3; // aciertos seguidos para subir
+
+  function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+  function addSub(lo, hi) {
+    return function () {
+      var a = rnd(lo, hi), b = rnd(lo, hi);
+      if (Math.random() < 0.5) {
+        if (a < b) { var t = a; a = b; b = t; } // resta sin negativos
+        return { text: a + " − " + b, answer: a - b };
+      }
+      return { text: a + " + " + b, answer: a + b };
+    };
+  }
+  function mul(aLo, aHi, bLo, bHi) {
+    return function () {
+      var a = rnd(aLo, aHi), b = rnd(bLo, bHi);
+      return { text: a + " × " + b, answer: a * b };
+    };
+  }
+  function divExact(qLo, qHi, dLo, dHi) {
+    return function () {
+      var q = rnd(qLo, qHi), d = rnd(dLo, dHi);
+      return { text: (q * d) + " ÷ " + d, answer: q };
+    };
+  }
+  function mixed() {
+    var pool = [addSub(20, 99), mul(3, 12, 3, 12), divExact(2, 12, 3, 12)];
+    return function () { return pool[rnd(0, pool.length - 1)](); };
+  }
+
+  // ---------- Estado ----------
+  var state = { level: 0, streak: 0, best: 0, correctInRow: 0 };
+  var current = null, typed = "", answered = false;
+  var tStart = 0, tLimit = 0, raf = 0, resolvedTime = 0;
+
+  var STORE = "candadoMental.v1";
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STORE));
+      if (s && typeof s.level === "number") {
+        state.level = Math.min(Math.max(s.level, 0), LEVELS.length - 1);
+        state.best = s.best || 0;
+      }
+    } catch (e) {}
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify({ level: state.level, best: state.best })); } catch (e) {}
+  }
+
+  // ---------- Elementos ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var elProblem = $("problem"), elAnswer = $("answer"), elFeedback = $("feedback");
+  var elTimerWrap = $("timerWrap"), elTimerBar = $("timerBar"), elTimeLabel = $("timeLabel");
+  var elLevelTag = $("levelTag"), elCard = $("screenChallenge"), elUnlocked = $("screenUnlocked");
+
+  function renderStatus() {
+    $("sLevel").firstChild.nodeValue = String(state.level + 1);
+    $("sLevelName").textContent = "/" + LEVELS.length;
+    $("sStreak").textContent = String(state.streak);
+    $("sBest").textContent = String(state.best);
+    elLevelTag.textContent = "Nivel " + (state.level + 1);
+  }
+
+  function newProblem() {
+    var lvl = LEVELS[state.level];
+    current = lvl.make();
+    typed = "";
+    answered = false;
+    elProblem.textContent = current.text;
+    elProblem.setAttribute("aria-label", current.text.replace("−", "menos").replace("×", "por").replace("÷", "entre"));
+    updateAnswer();
+    elFeedback.textContent = "";
+    elFeedback.className = "feedback";
+    elAnswer.className = "answer empty";
+    renderStatus();
+    startTimer(lvl.time);
+  }
+
+  function updateAnswer() {
+    if (typed === "") {
+      elAnswer.textContent = "—";
+      elAnswer.classList.add("empty");
+    } else {
+      elAnswer.textContent = typed;
+      elAnswer.classList.remove("empty");
+    }
+  }
+
+  function startTimer(seconds) {
+    tLimit = seconds * 1000;
+    tStart = performance.now();
+    elTimerWrap.classList.remove("warn");
+    elTimerBar.style.transform = "scaleX(1)";
+    cancelAnimationFrame(raf);
+    tick();
+  }
+  function tick() {
+    var elapsed = performance.now() - tStart;
+    var left = Math.max(0, tLimit - elapsed);
+    var frac = left / tLimit;
+    elTimerBar.style.transform = "scaleX(" + frac + ")";
+    elTimeLabel.textContent = (left / 1000).toFixed(1) + " s";
+    if (frac < 0.25) elTimerWrap.classList.add("warn");
+    if (left <= 0) { timeUp(); return; }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function timeUp() {
+    if (answered) return;
+    cancelAnimationFrame(raf);
+    wrong("¡Se acabó el tiempo! Era " + current.answer);
+  }
+
+  function submit() {
+    if (answered || typed === "") return;
+    cancelAnimationFrame(raf);
+    resolvedTime = (performance.now() - tStart) / 1000;
+    var val = parseInt(typed, 10);
+    if (val === current.answer) correct();
+    else wrong("Incorrecto. Era " + current.answer);
+  }
+
+  function correct() {
+    answered = true;
+    elAnswer.className = "answer good";
+    state.streak += 1;
+    state.correctInRow += 1;
+    if (state.streak > state.best) state.best = state.streak;
+
+    var leveledUp = false;
+    if (state.correctInRow >= REQUIRED_STREAK && state.level < LEVELS.length - 1) {
+      state.level += 1;
+      state.correctInRow = 0;
+      leveledUp = true;
+    }
+    save();
+    renderStatus();
+
+    elFeedback.className = "feedback good";
+    elFeedback.textContent = leveledUp ? "¡Correcto! Subes al nivel " + (state.level + 1) : "¡Correcto!";
+    setTimeout(showUnlocked, 650);
+  }
+
+  function wrong(msg) {
+    answered = true;
+    elAnswer.className = "answer bad";
+    elCard.classList.add("shake");
+    setTimeout(function () { elCard.classList.remove("shake"); }, 320);
+    state.streak = 0;
+    state.correctInRow = 0;
+    if (state.level > 0) {
+      state.level -= 1;
+      msg += " · Bajas al nivel " + (state.level + 1);
+    }
+    save();
+    renderStatus();
+    elFeedback.className = "feedback bad";
+    elFeedback.textContent = msg;
+    setTimeout(newProblem, 1700);
+  }
+
+  function showUnlocked() {
+    elCard.hidden = true;
+    elUnlocked.hidden = false;
+    $("uTime").textContent = resolvedTime.toFixed(1) + "s";
+    $("uLevel").textContent = (state.level + 1) + "/" + LEVELS.length;
+    $("uStreak").textContent = String(state.streak);
+    var msgs = [
+      "Tu mente ya hizo su parte — usa el celular con intención.",
+      "Pausa ganada. ¿De verdad necesitas abrir esa app ahora?",
+      "Bien resuelto. Sigue así y el reto se pondrá más difícil.",
+      "Un cálculo menos de piloto automático. Adelante."
+    ];
+    $("unlockMsg").textContent = msgs[rnd(0, msgs.length - 1)];
+  }
+
+  // ---------- Entrada ----------
+  function press(d) {
+    if (answered) return;
+    if (typed.length >= 6) return;
+    if (d === "0" && typed === "") return; // sin ceros a la izquierda
+    typed += d;
+    updateAnswer();
+  }
+  function clearOne() {
+    if (answered) return;
+    typed = typed.slice(0, -1);
+    updateAnswer();
+  }
+
+  document.querySelectorAll(".pad button[data-d]").forEach(function (b) {
+    b.addEventListener("click", function () { press(b.getAttribute("data-d")); });
+  });
+  $("clearBtn").addEventListener("click", clearOne);
+  $("enterBtn").addEventListener("click", submit);
+
+  document.addEventListener("keydown", function (e) {
+    if (!elUnlocked.hidden) return;
+    if (e.key >= "0" && e.key <= "9") { press(e.key); }
+    else if (e.key === "Backspace") { clearOne(); }
+    else if (e.key === "Enter") { submit(); }
+  });
+
+  $("lockAgainBtn").addEventListener("click", function () {
+    elUnlocked.hidden = true;
+    elCard.hidden = false;
+    newProblem();
+  });
+  $("resetBtn").addEventListener("click", function () {
+    state.level = 0; state.streak = 0; state.best = 0; state.correctInRow = 0;
+    save();
+    elUnlocked.hidden = true;
+    elCard.hidden = false;
+    newProblem();
+  });
+
+  // ---------- Tema ----------
+  (function () {
+    var btn = $("themeBtn");
+    var order = ["", "light", "dark"], labels = { "": "Auto", "light": "Claro", "dark": "Oscuro" };
+    var cur = "";
+    try { cur = localStorage.getItem("candadoTheme") || ""; } catch (e) {}
+    apply(cur);
+    btn.addEventListener("click", function () {
+      cur = order[(order.indexOf(cur) + 1) % order.length];
+      apply(cur);
+      try { localStorage.setItem("candadoTheme", cur); } catch (e) {}
+    });
+    function apply(v) {
+      if (v) document.documentElement.setAttribute("data-theme", v);
+      else document.documentElement.removeAttribute("data-theme");
+      btn.textContent = "Tema: " + labels[v];
+    }
+  })();
+
+  // ---------- Arranque ----------
+  load();
+  renderStatus();
+  newProblem();
+})();
+</script>
