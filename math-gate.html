@@ -421,15 +421,16 @@
 
   // ---------- Niveles: números más grandes + operaciones más duras + menos tiempo ----------
   // requiredStreak: aciertos seguidos para subir de nivel.
+  // Cada nivel mezcla las cuatro operaciones (+ − × ÷); sube el tamaño y baja el tiempo.
   var LEVELS = [
-    { name: "Sumas y restas fáciles", time: 22, make: addSub(1, 9) },
-    { name: "Sumas y restas de dos cifras", time: 20, make: addSub(10, 49) },
-    { name: "Sumas y restas grandes", time: 18, make: addSub(15, 99) },
-    { name: "Tablas de multiplicar", time: 18, make: mul(2, 9, 2, 9) },
-    { name: "Multiplicación dos × una cifra", time: 16, make: mul(11, 29, 3, 9) },
-    { name: "División exacta", time: 16, make: divExact(2, 9, 2, 12) },
-    { name: "Multiplicación dos × dos cifras", time: 15, make: mul(11, 25, 11, 19) },
-    { name: "Mixto a contrarreloj", time: 12, make: mixed() }
+    level("Fácil",            24, { asLo: 1,  asHi: 9,   mLo: 2, mHi: 5,  m2Lo: 2, m2Hi: 5,  dqLo: 2, dqHi: 5,  ddLo: 2, ddHi: 5  }),
+    level("Números hasta 20", 22, { asLo: 2,  asHi: 20,  mLo: 2, mHi: 9,  m2Lo: 2, m2Hi: 9,  dqLo: 2, dqHi: 9,  ddLo: 2, ddHi: 9  }),
+    level("Dos cifras",       20, { asLo: 10, asHi: 50,  mLo: 2, mHi: 12, m2Lo: 2, m2Hi: 12, dqLo: 2, dqHi: 12, ddLo: 2, ddHi: 12 }),
+    level("Dos cifras grandes",18,{ asLo: 20, asHi: 99,  mLo: 3, mHi: 15, m2Lo: 3, m2Hi: 12, dqLo: 2, dqHi: 12, ddLo: 3, ddHi: 15 }),
+    level("Números grandes",  16, { asLo: 30, asHi: 199, mLo: 6, mHi: 19, m2Lo: 3, m2Hi: 12, dqLo: 3, dqHi: 15, ddLo: 6, ddHi: 19 }),
+    level("Más grandes",      14, { asLo: 50, asHi: 399, mLo: 11,mHi: 25, m2Lo: 4, m2Hi: 15, dqLo: 4, dqHi: 15, ddLo: 7, ddHi: 24 }),
+    level("Avanzado",         12, { asLo: 80, asHi: 599, mLo: 11,mHi: 30, m2Lo: 6, m2Hi: 19, dqLo: 6, dqHi: 19, ddLo: 9, ddHi: 30 }),
+    level("Contrarreloj",     10, { asLo: 99, asHi: 899, mLo: 12,mHi: 39, m2Lo: 8, m2Hi: 25, dqLo: 8, dqHi: 25, ddLo: 11,ddHi: 39 })
   ];
   var REQUIRED_STREAK = 3; // aciertos seguidos para subir
 
@@ -457,9 +458,14 @@
       return { text: (q * d) + " ÷ " + d, answer: q };
     };
   }
-  function mixed() {
-    var pool = [addSub(20, 99), mul(3, 12, 3, 12), divExact(2, 12, 3, 12)];
-    return function () { return pool[rnd(0, pool.length - 1)](); };
+  // Construye un nivel que elige al azar entre suma/resta, multiplicación y división.
+  function level(name, time, o) {
+    var gens = [
+      addSub(o.asLo, o.asHi),
+      mul(o.mLo, o.mHi, o.m2Lo, o.m2Hi),
+      divExact(o.dqLo, o.dqHi, o.ddLo, o.ddHi)
+    ];
+    return { name: name, time: time, make: function () { return gens[rnd(0, gens.length - 1)](); } };
   }
 
   // ---------- Estado ----------
